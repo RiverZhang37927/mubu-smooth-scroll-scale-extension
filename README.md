@@ -2,8 +2,13 @@
 
 [toc]
 
-## 功能实现
+## 开发动机
+发现幕布网页端、win/mac桌面端均存在滚动与放缩动作卡顿，
+使用体验甚至不如android/ios端APP.
 
+## 新增功能
+
+下载repo中的所有文件.zip
 在 Edge 中打开 mubu.com 域名下**任意网页**时，让滚动/平移/缩放更平滑：
 
 - **思维导图模式页面**：
@@ -14,7 +19,7 @@
 
 ***
 
-### 方案 A：Edge 解压扩展（一次安装，长期生效）
+### 部署方案 A：Edge 解压扩展（一次安装，长期生效）
 
 1. 打开 Edge，地址栏输入 edge://extensions
 2. 左下角打开 **开发人员模式**
@@ -24,7 +29,7 @@
 
 > 之前已加载过本扩展的，在 edge://extensions 里点它的 **刷新** 按钮即可。
 
-### 方案 B：Node.js 脚本（无需安装扩展，但需保持脚本运行）
+### 部署方案 B：Node.js 脚本（无需安装扩展，但需保持脚本运行）
 
 要求本机已安装 Node.js。命令行运行：
 
@@ -57,3 +62,7 @@
 - mubu-smooth-scroll-extension/ — Edge 解压扩展（方案 A，推荐）
 - mubu_smooth_scroll.mjs — Node.js 脚本（方案 B）
 - smooth-scroll.patch.js — 补丁核心（两种方案共用）
+
+## 展望
+1. 欢迎添加branch以实现xmind等其他主流思维导图页面滚动平滑
+2. 欢迎添加branch以适配google chrome等其他浏览器的扩展系统
