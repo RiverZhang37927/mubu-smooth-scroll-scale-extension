@@ -13,7 +13,7 @@ Current version: **v1.2.0**
 - Mubu is a mind mapping application (Webpage/Windows/macOS/Android/iOS). It's like XMind with most of the formatting and styling features stripped away.
 - Mubu.com works smoothly when accessed from China IP addresses (Mainland/HK).
 - This extension is for webpage users.
-- This README in English was directly translated from Chinese by ChatGPT, which turned out nuts. As an advance English learner, I can see inappropriate / unprofessional wordings piled up in this text.
+- This README in English was directly translated from Chinese by ChatGPT, which turned out nuts. As an advance English learner, I can see inappropriate / unprofessional wordings piled up in the following texts.
   Due to my limited surfing time after work, currently I feel so sorry not being able to rewrite this README for higher readability.
   I could just recommend readers to use other translators to translate from README in Chinese directly.
   Sincere appologies [>_<]
