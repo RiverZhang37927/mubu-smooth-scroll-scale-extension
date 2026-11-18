@@ -10,20 +10,20 @@ Current version: **v1.2.0**
 
 ## **Tips**
 
-- Mubu is a mind mapping application (Webpage/Windows/macOS). It's like XMind with most of the formatting and styling features stripped away.
+- Mubu is a mind mapping application (Webpage/Windows/macOS/Android/iOS). It's like XMind with most of the formatting and styling features stripped away.
 - Mubu.com works smoothly when accessed from China IP addresses (Mainland/HK).
 - This extension is for webpage users.
 
 
 ## Why these features?
 
-Scrolling and zooming in the Mubu web app, as well as in its Windows / macOS desktop clients, can feel sluggish—even less responsive than the Android / iOS apps.
+Scrolling and zooming in the Mubu web app, as well as in its Windows / macOS desktop clients, can feel sluggish—even less responsive than its Android / iOS apps.
 
 This extension adds **accumulative + eased** scrolling / panning / zooming to mubu.com at the browser level. It also lets you change the interface font to **any font installed on your local machine**.
 
 ## Extension Features at a Glance
 
-Takes effect when mubu.com (including all its subdomains) is opened in Edge.
+Takes effect when mubu.com (and all its subdomains) is opened on Edge.
 
 ### 1. Mind Map Mode
 
