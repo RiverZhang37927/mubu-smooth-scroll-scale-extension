@@ -21,7 +21,7 @@ Scrolling and zooming in the Mubu web app, as well as in its Windows / macOS des
 
 This extension adds **accumulative + eased** scrolling / panning / zooming to mubu.com at the browser level. It also lets you change the interface font to **any font installed on your local machine**.
 
-## Added Features
+## Features Added
 
 Takes effect when mubu.com (and all its subdomains) is opened on Edge.
 
@@ -55,7 +55,7 @@ The default font is **Noto Serif SC** (must be installed locally; if unavailable
 
 ## Installation
 
-### Easy Method: Load the Unpacked Extension in Edge (Recommended)
+### (1) Load the Unpacked Extension in Edge (Recommended)
 
 1. Open Edge and enter `edge://extensions` in the address bar.
 2. Turn on **Developer mode** in the lower-left corner.
@@ -71,7 +71,7 @@ Notes:
   - `fontSettings` — reads the list of installed fonts (Edge will display a permission prompt saying “Read and change your font settings”; this extension **only reads font settings and does not modify system fonts**).
 - Upgrading from an older version: The folder name and permissions have changed. It is recommended that you first **remove the old extension** from `edge://extensions`, then load the unpacked extension again.
 
-### Geek Method: Node.js Script (No Extension Installation Required; Script Must Keep Running)
+### (2) Node.js Script (No Extension Installation Required; Script Must Keep Running)
 
 Node.js must be installed on your local machine:
 
