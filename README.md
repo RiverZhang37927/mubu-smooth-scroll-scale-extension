@@ -6,9 +6,8 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2EA44F?style=flat-square" alt="License: MIT" /></a>
   <a href="package.json"><img src="https://img.shields.io/badge/Node.js-%3E%3D22-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js >=22" /></a>
 </p>
-
+<p align="center">中文 · <a href="README.en.md">English</a></p>
 <p align="center">Latest Release · <a href="README.1.0.0.zh.md">Font Default Release</a>  </p>
-<p align="center"><a href="README.en.md">English</a> · 中文</p>
 
 ## 开发动机
 
