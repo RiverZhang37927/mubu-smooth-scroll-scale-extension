@@ -16,7 +16,7 @@ Current version: **v1.2.0**
 - This README in English was directly translated from Chinese by ChatGPT, which turned out nuts. As an advance English learner, I can see inappropriate / unprofessional wordings piled up in this text.
   Due to my limited surfing time after work, currently I feel so sorry not being able to rewrite this README for higher readability.
   I could just recommend readers to use other translators to translate from README in Chinese directly.
-  Sincere appologies. 
+  Sincere appologies [lol]
 
 ## Why these features?
 
