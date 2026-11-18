@@ -1,4 +1,4 @@
-# Mubu Web: Smooth Scrolling / Smooth Zoom / Custom Fonts — Edge Extension
+# mubu.com: Smooth Scrolling / Smooth Zoom / Custom Fonts — Edge Extension
 
 Current version: **v1.2.0**
 
