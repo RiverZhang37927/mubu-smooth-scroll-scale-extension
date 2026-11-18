@@ -8,6 +8,7 @@
 </p>
 
 <p align="center">Latest Release · <a href="README.1.0.0.zh.md">Font Default Release</a>  </p>
+<p align="center"><a href="README.en.md">English</a> · 中文</p>
 
 ## 开发动机
 
