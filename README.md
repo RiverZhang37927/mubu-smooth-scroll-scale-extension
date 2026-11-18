@@ -1,4 +1,4 @@
-# mubu.com: Smooth Scrolling / Smooth Zoom / Custom Fonts — Edge Extension
+# Mubu.com: Smooth Scrolling / Smooth Zoom / Custom Fonts — Edge Extension
 
 Current version: **v1.2.0**
 
@@ -10,11 +10,10 @@ Current version: **v1.2.0**
 
 ### **A Friendly Note for International Users**
 
-Mubu is a mind mapping application (available on Webpage/Windows/macOS). It's just like XMind with most of the formatting and styling features stripped away.
+- Mubu is a mind mapping application (available on Webpage/Windows/macOS). It's just like XMind with most of the formatting and styling features stripped away.
+- Mubu works smoothly when accessed from mainland China or Hong Kong IP addresses, so I recommend using it together with a VPN.
+- You may find using mubu is much easier to stay focused on actual contents instead of format-customize compared to XMind.
 
-I personally love its minimalist design app so much. I found it much easier to stay focused on actual contents instead of format-customize compared to XMind.
-
-Mubu works smoothly when accessed from mainland China or Hong Kong IP addresses, so I recommend using it together with a VPN.
 
 ## Why these features?
 
