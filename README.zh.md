@@ -51,12 +51,13 @@
 
 ### 不折腾方案：Edge 解压扩展（推荐）
 
-1. 打开 Edge，地址栏输入 `edge://extensions`
-2. 打开左下角的 **开发人员模式**
-3. 点击 **加载解压缩的扩展**
-4. 选择本仓库中的 **mubu-smooth-scroll-scale-extend-on-edge** 文件夹
-5. 打开或刷新 mubu.com 任意页面
-6. 点击右上角工具栏上的扩展图标 → 选择想要的字体
+1. 点击code下载整个项目的源代码.zip
+2. 打开 Edge，地址栏输入 `edge://extensions`
+3. 打开左下角的 **开发人员模式**
+4. 点击 **加载解压缩的扩展**
+5. 选择本仓库中的 **mubu-smooth-scroll-scale-extend-on-edge** 文件夹
+6. 打开或刷新 mubu.com 任意页面
+7. 点击插件栏中出现的扩招图标 → 选择想要的字体
 
 说明：
 
