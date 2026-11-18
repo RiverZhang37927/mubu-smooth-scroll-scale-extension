@@ -6,7 +6,7 @@
 </p>
 
 <p align="center"><a href="README.en.md">English</a> · 中文</p>
-<p align="center"> <a href="README.zh.md">Latest Release</a> · Font Default Release</p>
+<p align="center"> <a href="README.md">Latest Release</a> · Font Default Release</p>
 
 ## 开发动机
 发现幕布网页端、win/mac桌面端均存在滚动与放缩动作卡顿，使用体验甚至不如android/ios端APP。
