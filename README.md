@@ -11,8 +11,7 @@ Current version: **v1.2.0**
 ### **A Friendly Note for International Users**
 
 - Mubu is a mind mapping application (available on Webpage/Windows/macOS). It's just like XMind with most of the formatting and styling features stripped away.
-- Mubu works smoothly when accessed from mainland China or Hong Kong IP addresses, so I recommend using it together with a VPN.
-- You may find using mubu is much easier to stay focused on actual contents instead of format-customize compared to XMind.
+- Mubu works smoothly when accessed from mainland China or Hong Kong IP addresses
 
 
 ## Why these features?
