@@ -8,7 +8,7 @@ Current version: **v1.2.0**
 </p>
 <p align="center">English · <a href="README.zh.md">中文</a></p>
 
-### **Tips**
+## **Tips**
 
 - Mubu is a mind mapping application (Webpage/Windows/macOS). It's like XMind with most of the formatting and styling features stripped away.
 - Mubu.com works smoothly when accessed from China IP addresses (Mainland/HK).
