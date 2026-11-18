@@ -1,165 +1,459 @@
-# Mubu.com: Smooth Scrolling / Smooth Zoom / Custom Fonts — Edge Extension
-
-Current version: **v1.2.0**
+# Mubu Smooth Scrolling, Smooth Zoom & Configurable Font Override — Edge Extension
 
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2EA44F?style=flat-square" alt="License: MIT" /></a>
-  <a href="package.json"><img src="https://img.shields.io/badge/Node.js-%3E%3D22-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js >=22" /></a>
+  <img src="https://img.shields.io/badge/license-MIT-2EA44F?style=flat-square" alt="License: MIT" />
+  <img src="https://img.shields.io/badge/Edge-%E2%89%A5111-0078D7?style=flat-square" alt="Edge >= 111" />
+  <img src="https://img.shields.io/badge/Node.js-%3E%3D22-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js >= 22" />
 </p>
 <p align="center">English · <a href="README.md">中文</a></p>
 
-## **Tips**
+Manifest V3 extension for Microsoft Edge (Chromium) that (a) replaces the discrete, per-event
+pan/zoom response of [mubu.com](https://mubu.com) with an eased, accumulative response, and
+(b) applies a user-selected system font over both DOM text and canvas-rendered text.
 
-- Mubu is a mind mapping application (Webpage/Windows/macOS/Android/iOS). It's like XMind with most of the formatting and styling features stripped away.
-- Mubu.com works smoothly when accessed from China IP addresses (Mainland/HK).
-- This extension is for webpage users.
-- This README in English was directly translated from Chinese by ChatGPT, which turned out nuts. As an advance English learner, I can see inappropriate / unprofessional wordings piled up in the following texts.
-  Due to my limited surfing time after work, currently I feel so sorry not being able to rewrite this README for higher readability.
-  I could just recommend readers to use other translators to translate from README in Chinese directly.
-  Sincere appologies [>_<]
+The implementation performs **no bundle patching, no request interception, and no network
+proxying**; all behaviour is injected at runtime through content scripts and standard browser APIs.
 
-## Why these features?
+---
 
-Scrolling and zooming in the Mubu web app, as well as in its Windows / macOS desktop clients, can feel sluggish—even less responsive than its Android / iOS apps.
+## 1. Overview
 
-This extension adds **accumulative + eased** scrolling / panning / zooming to mubu.com at the browser level. It also lets you change the interface font to **any font installed on your local device**.
+Mubu is a browser-based outliner and mind-mapper. Its outline view is a conventional DOM
+scrolling container, but its mind-map view renders into a WebGL canvas and implements panning
+and zooming by consuming raw `wheel` deltas directly — one discrete translation or scale
+step per event, with no interpolation. On precision pointing devices this produces a visibly
+quantised, non-inertial response.
 
-## Features Added
+This extension interposes a **first-order exponential smoothing accumulator** between the input
+device and the site's own event handlers. It does not reimplement panning or zooming; it feeds
+the site's existing handlers a sequence of attenuated deltas over successive animation frames,
+so the site remains the single source of truth for camera state and hit-testing.
 
-Takes effect when mubu.com (and all its subdomains) is opened on Edge.
+The font feature is independent of the input work: it overrides `font-family` through the
+CSSOM for DOM nodes and through a descriptor rewrite of `CanvasRenderingContext2D.prototype.font`
+for canvas text, which is the only reliable way to affect text that is rasterised into a
+`<canvas>` element.
 
-### 1. Mind Map Mode
+### Non-goals
 
-- **Scroll wheel to pan the canvas**: Accumulative + eased. Multiple consecutive wheel movements accumulate into a total offset and transition smoothly (instead of several wheel movements resulting in only one scroll).
-- **Ctrl / ⌘ + scroll wheel to zoom**: Accumulative + eased, with the zoom center precisely following the cursor.
+- Not a proxy, MITM, or offline mirror; the site is loaded unmodified from its own origin.
+- Not a userscript bundler; nothing is injected as inline script (see §9).
+- Does not touch document content, sync, authentication, or telemetry.
+- Does not attempt to smooth the outline view's scrolling; that path is left to the user agent.
 
-### 2. Global Font (Customizable)
+---
 
-Click the extension icon in the toolbar to open the font panel:
+## 2. Feature Matrix
 
-- Automatically lists **all fonts installed on your local machine** (approximately 229 tested, including Chinese-named fonts such as SimSun, KaiTi, Microsoft YaHei, and STKaiti).
-- Supports **search and filtering** (e.g. enter “SimSun”, “Source Han”, or “Noto”) and **manual entry** of any font name.
-- Switch to **frequently used fonts** with one click.
-- Select **(Do not change font / Mubu default)** to disable the font override and restore Mubu's native font.
-- Your selection is **applied in real time** to open Mubu tabs and saved for the next time you open the site.
+| Capability | Mechanism | Affected scope |
+| --- | --- | --- |
+| Wheel panning | Capture-phase listener → accumulator → eased synthetic `wheel` re-dispatch | Mind-map canvas (`.minder-container`) |
+| Wheel zooming (Ctrl/⌘) | Same pipeline, anchored at the pointer, with DPR-corrected coordinates | Mind-map canvas |
+| DOM font override | Injected `style` element, selector list `html, body, *`, `!important` | All DOM text and UI on `mubu.com` and subdomains |
+| Canvas font override | `CanvasRenderingContext2D.prototype.font` accessor rewrite | Mind-map topic labels, canvas-rendered text |
+| Font selection | `chrome.fontSettings.getFontList()` + `chrome.storage.sync` | Extension popup |
 
-Font override coverage:
+---
 
-- Page DOM text and UI (outline, sidebar, buttons, menus, etc.).
-- **Mind map canvas text** (implemented by patching `CanvasRenderingContext2D.font`).
-- Note: Canvas text changes take full effect **after refreshing the page**.
+## 3. Compatibility
 
-The default font is **Noto Serif SC** (must be installed locally; if unavailable, the extension automatically falls back to Source Han Serif SC / SimSun / serif).
+| Component | Minimum | Notes |
+| --- | --- | --- |
+| Browser | Edge 111 | Requires `"world": "MAIN"` content scripts (Chromium 111+) |
+| Platform | Windows / macOS / Linux | Any platform running Edge |
+| Node.js (script mode only) | 22 | Requires the global `WebSocket` binding and ESM support |
+| Target pages | `https://mubu.com/*`, `https://*.mubu.com/*` | Matched by both content-script entries |
 
-### 3. Explicitly Unmodified Areas
+Validated on Edge 157.0.4341.60 (Chromium 157), Windows, `devicePixelRatio = 1.25`,
+with approximately 229 installed font families enumerated.
 
-- **Scrolling on outline pages**: Native browser behavior is preserved; this extension does not intervene.
-- **Ctrl + scroll wheel outside mind map areas**: Remains browser page zoom.
+---
 
-## Installation
+## 4. Installation
 
-### (1) Load the Unpacked Extension in Edge (Recommended)
+### 4.1 Unpacked extension (recommended)
 
-1. Open Edge and enter `edge://extensions` in the address bar.
-2. Turn on **Developer mode** in the lower-left corner.
-3. Click **Load unpacked**.
-4. Select the **mubu-smooth-scroll-scale-extend-on-edge** folder in this repository.
-5. Open or refresh any page on mubu.com.
-6. Click the extension icon in the upper-right toolbar and choose your preferred font.
+1. Navigate to `edge://extensions`.
+2. Enable **Developer mode**.
+3. Select **Load unpacked** and choose the `mubu-smooth-scroll-scale-extend-on-edge` directory.
+4. Open or reload any page under `mubu.com`.
+5. Click the toolbar icon to open the configuration popup.
 
-Notes:
+**Permissions requested**
 
-- This extension requests two permissions:
-  - `storage` — saves your font selection.
-  - `fontSettings` — reads the list of installed fonts (Edge will display a permission prompt saying “Read and change your font settings”; this extension **only reads font settings and does not modify system fonts**).
-- Upgrading from an older version: The folder name and permissions have changed. It is recommended that you first **remove the old extension** from `edge://extensions`, then load the unpacked extension again.
+| Permission | Rationale |
+| --- | --- |
+| `storage` | Persists the selected font family (`chrome.storage.sync`). |
+| `fontSettings` | Enumerates installed font families via `getFontList()`. The API is read-only in this extension; no font or system setting is modified. Edge surfaces the warning *"Read and change your font settings"*. |
 
-### (2) Node.js Script (No Extension Installation Required; Script Must Keep Running)
+**Upgrading.** The manifest declares new permissions relative to v1.0.x. Edge disables the
+extension until the new permissions are accepted; remove the previous entry and load unpacked again.
 
-Node.js must be installed on your local machine:
+### 4.2 Script mode (CDP, no installation)
+
+Requires Node.js 22 or newer.
 
 ```bash
 node mubu_smooth_scroll.mjs
 ```
 
-The script launches an instance of Edge with a debugging port and injects the patch. Keep the terminal window open; press `Ctrl+C` to exit.
+The launcher spawns Edge with `--remote-debugging-port`, attaches to a fresh target, and registers the
+patch via `Page.addScriptToEvaluateOnNewDocument`. The process must remain alive; `Ctrl+C` terminates it.
 
-| Variable | Description | Default |
+| Environment variable | Description | Default |
 | --- | --- | --- |
-| EDGE_PATH | Full path to `msedge.exe` | `C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe` |
-| MUBU_URL | URL to open | `https://mubu.com/app` |
-| MUBU_PORT | Debugging port | `9222` |
-| MUBU_FONT | Font name (set to an empty string to leave the font unchanged) | `Noto Serif SC` |
+| `EDGE_PATH` | Absolute path to `msedge.exe` | `C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe` |
+| `MUBU_URL` | Initial URL | `https://mubu.com/app` |
+| `MUBU_PORT` | DevTools protocol port | `9222` |
+| `MUBU_FONT` | Font family; empty string disables the override | `Noto Serif SC` |
 
-## Using the Font Panel
+---
 
-| Action | Description |
+## 5. Usage
+
+### 5.1 Interaction model
+
+1. Open any page under `mubu.com`.
+2. Click the extension icon. Pin it through the extensions (puzzle-piece) menu if it is hidden.
+3. Select a family from the list, or type one directly into the input field.
+4. Press **Save and Apply**.
+5. Press **Refresh the page** once, so that canvas text is re-rasterised.
+
+### 5.2 Panel semantics
+
+| Control | Behaviour |
 | --- | --- |
-| Select a font from the list | Automatically fills the input field |
-| Search box at the top | Filters the font list |
-| Enter a font manually | Supports font names that do not appear in the list |
-| Save and Apply | Saves the selection to extension storage; open Mubu pages update immediately |
-| Refresh the page | Reloads the current tab (refresh once to apply canvas text changes) |
+| Font list (single click) | Copies the family name into the input field only; **does not commit**. |
+| Search field | Case-insensitive substring filter over the enumerated families. |
+| Manual entry | Accepts any family name, including families the browser does not report. |
+| Frequently-used chips | Commits and applies immediately (no confirmation step). |
+| **Save and Apply** | Writes `{ fontFamily }` to `chrome.storage.sync`; propagates to all open tabs through `storage.onChanged`. |
+| **Refresh page** | `chrome.tabs.reload()` on the active tab. |
 
-## How It Works
+### 5.3 Panel label reference
 
-| File | Runtime Context | Purpose |
+The popup is localised in Chinese; the following table maps each label.
+
+| Label | Meaning |
+| --- | --- |
+| 幕布设置 | Mubu Settings |
+| 字体 / 平滑滚动 / 平滑缩放 | Font / Smooth scrolling / Smooth zooming |
+| 搜索已安装字体（如 宋体、思源、Noto） | Search installed fonts |
+| （不修改字体 / 幕布默认） | Do not override the font (use Mubu's default) |
+| 字体名称（留空=不修改字体） | Font family name (empty means no override) |
+| 保存并应用 | Save and Apply |
+| 刷新页面 | Refresh page |
+| 常用字体 | Frequently used fonts |
+| 已保存：… | Saved: … |
+| 已读取 N 个已安装字体 | N installed fonts enumerated |
+
+### 5.4 Persisted state
+
+| Channel | Key | Semantics |
 | --- | --- | --- |
-| `content-bridge.js` | Isolated world (`ISOLATED`) | Reads the selected font from `chrome.storage.sync`, writes it to the `<html data-mubu-font-family>` attribute, and listens for changes to keep it synchronized in real time. It also caches the selection in the page's `localStorage`, so the font is already applied on the first render after a page reload. |
-| `content.js` | Main world (`world: "MAIN"`) | Watches the attribute, injects `font-family` CSS for DOM text, patches `CanvasRenderingContext2D.prototype.font` for canvas text, and implements accumulative easing for mind map panning / zooming. |
-| `popup.html` / `popup.js` | Extension popup | Enumerates fonts using `chrome.fontSettings.getFontList()` and saves the selection. |
-| `smooth-scroll.patch.js` | — | Same contents as `content.js`, provided for use by Method B. |
+| `chrome.storage.sync` | `fontFamily` | Authoritative selection. Absent means default `Noto Serif SC`; empty string disables the override. |
+| DOM attribute | `<html data-mubu-font-family>` | Cross-world transport, consumed by the main-world script. |
+| `localStorage` (origin `mubu.com`) | `__mubu_font_family` | Write-through cache enabling pre-paint application on reload. |
 
-Key Technical Details:
+---
 
-1. **Why are fonts handled by two separate scripts?** The canvas font patch must run in `world: "MAIN"`, but the main world cannot access the `chrome.*` APIs. The `<html data-mubu-font-family>` attribute is therefore used as a communication channel between the two worlds (the DOM is shared between them).
-2. **Why is `<script>` injection no longer used?** Early versions entered the main world by injecting inline scripts, which could be blocked by the page's CSP. Switching to `world: "MAIN"` eliminates the need for script injection.
-3. **Canvas text**: Mind map text is rendered through `CanvasRenderingContext2D`. The `ctx.font` value looks like `normal 400 16px "Helvetica Neue", ...`. The patch replaces the entire font-family portion after the font size in the setter.
-4. **Mind map panning / zooming**: The canvas has no DOM scrolling container. The extension therefore intercepts `wheel` events, then redispatches the eased deltas to `.minder-container` as **synthetic `wheel` events**, reusing the site's native panning / zooming logic (without relying on the site's bundled hash values).
-5. **Zoom-center correction**: Chrome scales the synthetic event's `offsetX/offsetY` by `1 / devicePixelRatio`. Therefore, when redispatching the event, `clientX/clientY` are multiplied by `devicePixelRatio` so that the zoom center precisely follows the cursor.
+## 6. Architecture
 
-## File Reference
+### 6.1 Component map
 
-| File | Description |
+| Artifact | Execution context | Responsibility |
+| --- | --- | --- |
+| `content-bridge.js` | Isolated world, `document_start` | Reads `chrome.storage.sync`, publishes the selection to the DOM attribute and the `localStorage` mirror, subscribes to `storage.onChanged`. |
+| `content.js` | Main world, `document_start` | Observes the attribute (`MutationObserver`), maintains the CSS and canvas font overrides, implements wheel accumulation and re-dispatch. |
+| `popup.html` / `popup.js` | Extension page | Enumerates families, renders the panel, commits the selection, reloads the active tab. |
+| `manifest.json` | — | MV3 declaration: two content-script entries, permissions, action popup. |
+| `smooth-scroll.patch.js` | — | Verbatim copy of `content.js`, consumed by script mode. |
+| `mubu_smooth_scroll.mjs` | Node.js | CDP launcher for script mode. |
+
+### 6.2 Execution contexts
+
+The canvas font override must mutate `CanvasRenderingContext2D.prototype` **in the page's own
+JavaScript realm**; otherwise the site's contexts are unaffected. That requires
+`world: "MAIN"`. Extension APIs (`chrome.storage`, `chrome.fontSettings`) are **not** exposed
+to main-world content scripts. The two constraints are mutually exclusive within a single script,
+hence the split:
+
+- isolated world — privileged extension APIs;
+- main world — page-realm mutation.
+
+The worlds share the DOM but not JavaScript objects, so the transport is DOM-backed (§6.3).
+
+### 6.3 State channels
+
+`content-bridge.js` is the only writer of the attribute; `content.js` is the only reader. The
+attribute is a primitive string, therefore it crosses the world boundary without object wrapping,
+structured-clone cost, or origin checks.
+
+The `localStorage` mirror exists for latency reasons: `storage.sync.get` is asynchronous and may
+resolve after first paint, whereas `localStorage` is synchronous and readable at
+`document_start`. Measured time-to-attribute after a reload: approximately 0.4 s from
+navigation start, dominated by document creation rather than by the cache read.
+
+### 6.4 Control flow
+
+```text
+trusted wheel event
+  └─ document [capture, passive:false]
+       ├─ metaKey/ctrlKey/altKey guard .......... bail out (UA zoom / OS gestures)
+       ├─ overMind(clientX, clientY)? ........... no  ▸ bail out (native handling)
+       └─ preventDefault() + stopPropagation()
+            ├─ (ctrl|meta)  ▸ zoom accumulator ─┐
+            └─ otherwise    ▸ pan accumulator  ─┤
+                                                ▼
+                        requestAnimationFrame loop
+                          Δ = (T − V) · α ;  V ← V + Δ
+                          dispatch WheelEvent{ deltaX|deltaY: Δ, ... }
+                                                │
+                                                ▼
+                          site handler consumes Δ → camera state
+```
+
+---
+
+## 7. Algorithms
+
+### 7.1 Discrete-to-continuous input smoothing
+
+Each wheel event contributes to an accumulator rather than being applied directly:
+
+- the target `T` accumulates the normalised input delta: `T ← T + Δ_in`;
+- the visible value `V` chases `T` by first-order exponential smoothing:
+  `V ← V + α · (T − V)`, with `α = 0.18`;
+- the per-frame emission is the increment `Δ_out = α · (T − V)`;
+- termination when `|T − V| < 0.5` for panning, or `|T − V| < 0.05` for zoom delta units.
+
+Properties: the mapping is strictly monotone in `T`; the response is frame-rate independent up
+to the sampling of `α`; convergence is geometric (about 12 frames to 90 % of target at 60 Hz);
+and multiple events issued within the same frame are **accumulated** rather than collapsed — the
+defect that motivated this work.
+
+### 7.2 Synthetic event redirection and re-entrancy
+
+The eased increment is delivered as a **synthetic** `WheelEvent` dispatched to
+`.minder-container`, that is, to the same element the site's handler is bound to. This reuses the
+site's pan/zoom implementation verbatim: no internal object graphs are reached, no PIXI
+display-tree or camera state is touched, and no dependency is introduced on minified identifiers.
+
+Two invariants are required:
+
+1. **Synchrony.** The site records the delta in its handler and applies it on its own ticker. The
+   loop emits at most one increment per animation frame, so increments are consumed in order.
+2. **Re-entrancy guard.** The extension's listener is capture-phase on `document`, so it also
+   observes the synthetic events it emits. Each synthesised event carries an expando
+   (`__mubuSynthetic`) and is short-circuited at the top of the listener. The tag is per-event and
+   cannot leak across dispatches.
+
+The synthetic path is semantically equivalent to a trusted event for the site's handler: it reads
+`deltaX`, `deltaY`, `ctrlKey` and `shiftKey`, all of which are carried by the synthesised object.
+
+### 7.3 Zoom anchor correction under device pixel ratio
+
+For **untrusted** events, Chromium derives `offsetX` / `offsetY` against the target's padding
+box in a coordinate space divided by `devicePixelRatio`:
+
+```text
+offsetX = clientX / DPR  −  targetOriginX
+offsetY = clientY / DPR  −  targetOriginY
+```
+
+The site's zoom handler uses these values as the fixed point of the transform, so raw client
+coordinates yield an anchor displaced by a constant fraction of the viewport, and the canvas
+visibly drifts while zooming. The handler therefore pre-multiplies the coordinates:
+
+```text
+clientX' = clientX · DPR ,   clientY' = clientY · DPR
+```
+
+which restores `offsetX = clientX − targetOriginX` — the value a trusted event would have produced.
+Measured anchor error before correction: (−200, −100) px at (1000, 500) on a DPR-1.25 display;
+after correction: 0 px. The pan path needs no correction because it consumes `deltaX` /
+`deltaY`, not offsets.
+
+### 7.4 Canvas font substitution
+
+`ctx.font` is a CSS font shorthand of the form
+`[style] [variant] [weight] <size>[/<line-height>] <family-list>`. The override installs a property
+descriptor on `CanvasRenderingContext2D.prototype`, preserving the native getter and wrapping the
+native setter:
+
+1. match the size token and the remainder of the shorthand
+   (`/(\d+(?:\.\d+)?(?:px|pt|em|rem|%|vh|vw))(?:\s*\/\s*[^ ]+)?\s+.*$/`);
+2. replace the family list with `"<selected>", serif`, retaining size, style and weight;
+3. delegate to the native setter.
+
+Family names are quoted and `\`-escaped, so names containing spaces or punctuation are handled.
+The override is read at **set time**, so changing the selection takes effect on the next
+rasterisation without re-installing the descriptor.
+
+### 7.5 DOM font substitution
+
+A single injected `<style id="mubu-font-override">` carries:
+
+```css
+html, body, * { font-family: "<selected>", <fallback chain> !important; }
+```
+
+The universal selector is deliberate: `font-family` is inherited, but a declaration on the element
+itself outranks an inherited value, and the site assigns concrete families through generated class
+names. `!important` outranks those rules without enumerating them.
+
+The fallback chain is the selected family followed by `Noto Serif SC`, `Source Han Serif SC`,
+`Songti SC`, `SimSun` and the generic `serif`; duplicates are removed case-insensitively so
+that the default selection does not produce a redundant chain.
+
+When the selection is the empty string, the `<style>` element is removed and the setter becomes a
+pass-through, so the override is reversible at runtime without reloading the extension.
+
+---
+
+## 8. Configuration Reference
+
+| Symbol | Value | Location |
+| --- | --- | --- |
+| Storage key | `fontFamily` | `popup.js`, `content-bridge.js` |
+| DOM attribute | `data-mubu-font-family` | `content.js`, `content-bridge.js` |
+| Cache key | `__mubu_font_family` | `content-bridge.js` |
+| Style element id | `mubu-font-override` | `content.js` |
+| Default family | `Noto Serif SC` | `content.js`, `content-bridge.js`, `popup.js` |
+| Smoothing coefficient | `α = 0.18` | `content.js` |
+| Convergence thresholds | `0.5` and `0.05` | `content.js` |
+| Re-entrancy tag | `__mubuSynthetic` | `content.js` |
+| Idempotency guard | `window.__mubuPatch` | `content.js` |
+
+---
+
+## 9. Design Rationale
+
+| Decision | Alternative rejected | Reason |
+| --- | --- | --- |
+| Re-dispatch synthetic `wheel` | Mutating camera state directly | The site owns camera state in a PIXI display tree; reaching it requires stable access to internal services, which minified bundles do not guarantee across releases. |
+| `world: "MAIN"` content script | Injecting an inline `<script>` | In testing, the page's Content-Security-Policy rejected the injected inline script; it never executed. |
+| DOM attribute transport | `CustomEvent` carrying an object payload | Objects created in one realm are remote objects in the other; primitives on a node attribute avoid wrapping and are observable declaratively. |
+| `MutationObserver` | `storage.onChanged` inside the main world | Extension APIs are unavailable in the main world; the observer also covers the attribute being restored after an SPA re-render. |
+| `!important` on `*` | Enumerating generated class names | Class names are content-hashed and change between releases. |
+| `fontSettings.getFontList()` | Local Font Access API | `queryLocalFonts()` requires a user gesture and a per-origin permission prompt on every profile; `fontSettings` is prompt-free and deterministic. |
+| Selection as data, not a rebuild | Rebuilding the bundle per font | The selection must be changeable without reinstall and must not depend on the site's bundle hash. |
+
+---
+
+## 10. Constraints and Limitations
+
+- **Outline view is not modified.** Its scrolling keeps native user-agent behaviour; no listener
+  is installed for it. The earlier accumulator for that path was removed by request.
+- **Canvas text requires a reload.** Glyphs are cached per font string, and the override applies to
+  subsequent rasterisations; a refresh or a re-layout is needed to repaint existing labels.
+- **Scope of interception.** Wheel handling is taken over only while the pointer is inside
+  `.minder-container`. Outside it, Ctrl + wheel performs user-agent page zoom.
+- **Installed families only.** A family that is not installed falls through to the fallback chain.
+- **No Web Store packaging.** The extension is loaded unpacked; Edge requires developer mode.
+- **Per-frame instances.** With `all_frames: true` each frame runs its own instance; the idempotency
+  guard is per frame.
+- **Not hardened against site redesign.** The selectors depend on `.minder-container` and on the
+  canvas and font APIs; renaming the container class would disable smoothing without breaking the
+  page.
+
+---
+
+## 11. Troubleshooting
+
+| Symptom | Likely cause | Remedy |
+| --- | --- | --- |
+| Panel lists no families | `fontSettings` permission revoked | `edge://extensions` → Details → Permissions; re-accept |
+| Family saved but page unchanged | Selected family not installed | Verify it renders in the list; try a system family such as `SimSun` |
+| DOM text changed, canvas text did not | Glyph cache | Reload the page |
+| Override has no visible effect | A higher-specificity rule with `!important` | Report the selector; the override currently uses the universal selector |
+| Mind map still stepwise | Pointer outside `.minder-container`, or the container class was renamed | Confirm with the container selector in DevTools |
+| Extension disabled after update | New permissions pending | Remove and load unpacked again |
+
+---
+
+## 12. Performance
+
+- One capture-phase listener on `document`; O(1) work per wheel event and no layout reads on the
+  input path.
+- Emissions are coalesced to one synthetic event per animation frame; the loop terminates within a
+  bounded number of frames (threshold-based) and cancels itself on completion.
+- The `MutationObserver` is scoped to a single attribute filter, so it fires only on actual
+  configuration changes.
+- Zero overhead outside the mind-map region: the listener returns after one `elementsFromPoint`
+  probe, and that probe is reached only when a container exists.
+
+---
+
+## 13. Security and Privacy
+
+- No network requests are issued by the extension; no analytics and no remote configuration.
+- `chrome.fontSettings` is used only for `getFontList()`; no font or system preference is written.
+- The only persisted state is the selected family name.
+- Main-world code touches two global surfaces: `CanvasRenderingContext2D.prototype.font` and a
+  namespaced attribute on `document.documentElement`. Both are additive and reversible.
+- Host permissions are limited to `mubu.com` and its subdomains.
+
+---
+
+## 14. Repository Layout
+
+```text
+mubu-smooth-scroll-scale-extend-on-edge/
+├── manifest.json              MV3 declaration (permissions, two content scripts, popup)
+├── content-bridge.js          isolated world: storage → DOM attribute → localStorage mirror
+├── content.js                 main world: font overrides + smoothed pan/zoom
+├── popup.html, popup.js       configuration UI
+├── smooth-scroll.patch.js     verbatim copy of content.js (script-mode payload)
+├── mubu_smooth_scroll.mjs     CDP launcher (script mode)
+├── README.en.md               this document (English)
+└── README.md                  Chinese README
+```
+
+---
+
+## 15. Development and Verification
+
+Load the unpacked directory, attach the DevTools Protocol to the target, and evaluate in the page
+realm. Useful probes:
+
+```js
+// font transport
+document.documentElement.getAttribute('data-mubu-font-family');
+
+// effective family on an element
+getComputedStyle(document.body).fontFamily;
+
+// confirm the canvas override is installed and effective
+(() => {
+  const c = document.createElement('canvas').getContext('2d');
+  c.font = 'normal 400 16px Arial';
+  return c.font;
+})();
+```
+
+Regression checklist:
+
+1. Wheel over the mind map pans smoothly, and successive events accumulate.
+2. Ctrl + wheel zooms about the pointer with no lateral drift.
+3. Changing the family updates DOM text immediately.
+4. Reloading the page repaints canvas text with the new family.
+5. Selecting *Do not override* removes the `<style>` element and turns the setter into a
+   pass-through.
+
+---
+
+## 16. Changelog
+
+| Version | Changes |
 | --- | --- |
-| `manifest.json` | Extension manifest (Manifest V3; declares the `storage` / `fontSettings` permissions) |
-| `content-bridge.js` | Settings bridge (isolated world) |
-| `content.js` | Main-world patch: fonts + smooth panning / zooming |
-| `popup.html` / `popup.js` | Font selection panel |
-| `smooth-scroll.patch.js` | Copy of the patch (identical to `content.js`, used by the Node.js script) |
-| `mubu_smooth_scroll.mjs` | Method B launcher script |
+| **1.2.1** | Added a collapsible *How to use* section to the configuration panel. |
+| **1.2.0** | Font selection from locally installed families; search, manual entry and frequently-used chips; duplicate-free fallback chain; `MUBU_FONT` for script mode; the outline scrolling override was removed (mind map only). |
+| **1.1.0** | Global font override covering DOM text and canvas text, defaulting to `Noto Serif SC`. |
+| **1.0.0** | Accumulative, eased mind-map panning and zooming. |
 
-## FAQ
+---
 
-**Q: The Mubu official website won't open.**
+## 17. License
 
-- Try using an IP address in China mainland or Hong Kong, China.
-
-**Q: The font is not taking effect.**
-
-- Make sure the selected font is actually installed (it should be searchable in the panel).
-- Refresh the page. Mind map canvas text requires a refresh to take full effect.
-- If Mubu's own **Custom Font** setting is enabled, this extension takes priority by using `!important`. To use Mubu's own font setting instead, select **Do not change font** in the panel.
-
-**Q: The font list in the panel is empty.**
-
-- Check whether the extension's permissions have been revoked (`edge://extensions` → Details → Permissions).
-- You can also enter a font name directly in the input field.
-
-**Q: The mind map is not scrolling smoothly.**
-
-- This extension only takes over wheel events when the pointer is inside the mind map canvas (`.minder-container`).
-
-**Q: Will this affect other websites?**
-
-- No. The extension only matches `https://mubu.com/*` and `https://*.mubu.com/*`.
-
-## Changelog
-
-- **v1.2.0**: Fonts can now be selected in the popup from **fonts installed on the local machine**; added font search / manual entry / frequently used fonts; fixed duplicate font stacks; added `MUBU_FONT` to the Node.js script.
-- **v1.0.0**: Added smooth mind map panning / zooming; set Noto Serif SC as the default global font.
-
-## Welcome to
-
-1. Add branches for compatibility with other major mind mapping apps, e.x. XMind.
-2. Add branches for compatibility with other browsers, e.x. Google Chrome.
+Released under the MIT License.
