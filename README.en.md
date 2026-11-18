@@ -13,13 +13,16 @@ Current version: **v1.2.0**
 - Mubu is a mind mapping application (Webpage/Windows/macOS/Android/iOS). It's like XMind with most of the formatting and styling features stripped away.
 - Mubu.com works smoothly when accessed from China IP addresses (Mainland/HK).
 - This extension is for webpage users.
-
+- This README in English was directly translated from Chinese by ChatGPT, which turned out nuts. As an advance English learner, I can see inappropriate / unprofessional wordings piled up in this text.
+  Due to my limited surfing time after work, currently I feel so sorry not being able to rewrite this README for higher readability.
+  I could just recommend readers to use other translators to translate from README in Chinese directly.
+  Sincere appologies. 
 
 ## Why these features?
 
 Scrolling and zooming in the Mubu web app, as well as in its Windows / macOS desktop clients, can feel sluggish—even less responsive than its Android / iOS apps.
 
-This extension adds **accumulative + eased** scrolling / panning / zooming to mubu.com at the browser level. It also lets you change the interface font to **any font installed on your local machine**.
+This extension adds **accumulative + eased** scrolling / panning / zooming to mubu.com at the browser level. It also lets you change the interface font to **any font installed on your local device**.
 
 ## Features Added
 
