@@ -21,7 +21,7 @@ Scrolling and zooming in the Mubu web app, as well as in its Windows / macOS des
 
 This extension adds **accumulative + eased** scrolling / panning / zooming to mubu.com at the browser level. It also lets you change the interface font to **any font installed on your local machine**.
 
-## Extension Features at a Glance
+## Added Features
 
 Takes effect when mubu.com (and all its subdomains) is opened on Edge.
 
@@ -156,7 +156,7 @@ Key Technical Details:
 - **v1.2.0**: Fonts can now be selected in the popup from **fonts installed on the local machine**; added font search / manual entry / frequently used fonts; fixed duplicate font stacks; added `MUBU_FONT` to the Node.js script.
 - **v1.0.0**: Added smooth mind map panning / zooming; set Noto Serif SC as the default global font.
 
-## Future Plans
+## Welcome to
 
-1. Contributions via branches to support other major mind mapping apps, such as XMind, are welcome.
-2. Contributions via branches to support other browsers, such as Google Chrome, are welcome.
+1. Add branches for compatibility with other major mind mapping apps, e.x. XMind.
+2. Add branches for compatibility with other browsers, e.x. Google Chrome.
