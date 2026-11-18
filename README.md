@@ -6,7 +6,7 @@ Current version: **v1.2.0**
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2EA44F?style=flat-square" alt="License: MIT" /></a>
   <a href="package.json"><img src="https://img.shields.io/badge/Node.js-%3E%3D22-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js >=22" /></a>
 </p>
-<p align="center">English · <a href="README.zh.md">中文</a></p>
+<p align="center">English · <a href="README.md">中文</a></p>
 
 ## **Tips**
 
